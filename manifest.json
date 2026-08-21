@@ -1,0 +1,8 @@
+{
+  "plugin_id": "sakuramedia_judge_collecttion_movie",
+  "display_name": "按时长判定合集影片",
+  "version": "0.1.0",
+  "host_api_version": 3,
+  "requires_python": ">=3.10",
+  "author": "SakuraMedia"
+}
