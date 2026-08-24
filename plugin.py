@@ -4,14 +4,15 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.common import normalize_movie_number
 from src.plugins import HOST_API_VERSION, PluginContext, PluginRegistration
 from src.scheduler.contracts import JobDefinition
 
 from .settings import DurationCollectionSettings
 
 PLUGIN_ID = "sakuramedia_judge_collecttion_movie"
-DISPLAY_NAME = "按时长判定合集影片"
-VERSION = "0.1.0"
+DISPLAY_NAME = "按时长/番号特征判定合集影片"
+VERSION = "0.2.0"
 PAGE_SIZE = 500
 
 
@@ -20,7 +21,7 @@ def judge_movies(
     config: DurationCollectionSettings,
     reporter: Any | None = None,
 ) -> dict[str, int]:
-    """遍历全库并按 ``duration_minutes >= threshold`` 更新合集字段。"""
+    """仅将时长或番号特征命中的影片标记为合集。"""
     logger = context.get_task_logger("judge-collection-by-duration")
     plugin_owner = f"plugin:{context.plugin_id}"
     after_id = 0
@@ -40,8 +41,20 @@ def judge_movies(
         for snapshot in page.items:
             stats["scanned"] += 1
             duration_minutes = snapshot.values.get("duration_minutes") or 0
-            target_is_collection = duration_minutes >= config.duration_threshold_minutes
-            if bool(snapshot.values["is_collection"]) == target_is_collection:
+            movie_number = snapshot.values.get("movie_number") or ""
+            normalized_movie_number = normalize_movie_number(movie_number)
+            matches_number_feature = any(
+                normalized_movie_number.startswith(feature)
+                for feature in config.number_features
+            )
+            if (
+                duration_minutes < config.duration_threshold_minutes
+                and not matches_number_feature
+            ):
+                stats["unchanged"] += 1
+                continue
+
+            if bool(snapshot.values["is_collection"]):
                 stats["unchanged"] += 1
                 continue
 
@@ -52,7 +65,7 @@ def judge_movies(
 
             patched = context.movies.patch(
                 snapshot.movie_id,
-                {"is_collection": target_is_collection},
+                {"is_collection": True},
                 expected_revision=snapshot.revision,
             )
             stats["updated" if patched else "patch_failed"] += 1
@@ -73,7 +86,7 @@ def judge_movies(
         after_id = page.next_cursor
 
     logger.info(
-        "按时长判定合集完成 threshold={} stats={}",
+        "合集判定完成 duration_threshold={} stats={}",
         config.duration_threshold_minutes,
         stats,
     )
@@ -97,7 +110,7 @@ def register(context: PluginContext) -> PluginRegistration:
                 task_key="sakuramedia_judge_collecttion_movie",
                 log_name="judge-collection-by-duration",
                 cli_name="judge-collection-by-duration",
-                cli_help="按影片时长判定合集影片",
+                cli_help="按影片时长或番号特征判定合集影片",
                 default_cron="0 4 * * *",
                 handler=run_judgement,
             ),

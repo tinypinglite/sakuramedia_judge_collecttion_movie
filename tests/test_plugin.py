@@ -36,12 +36,13 @@ class FakeContext:
         return SimpleNamespace(info=lambda *args, **kwargs: None)
 
 
-def _snapshot(movie_id, duration, is_collection, owners=None):
+def _snapshot(movie_id, duration, is_collection, owners=None, movie_number="ABP-001"):
     return MovieSnapshot(
         movie_id=movie_id,
         revision=0,
         values={
             "duration_minutes": duration,
+            "movie_number": movie_number,
             "is_collection": is_collection,
         },
         owners=owners or {},
@@ -49,10 +50,13 @@ def _snapshot(movie_id, duration, is_collection, owners=None):
 
 
 def test_default_threshold_is_300_minutes():
-    assert DurationCollectionSettings().duration_threshold_minutes == 300
+    settings = DurationCollectionSettings()
+
+    assert settings.duration_threshold_minutes == 300
+    assert settings.number_features == {"OFJE", "CJOB", "DVAJ", "REBD"}
 
 
-def test_judge_movies_uses_duration_threshold_and_respects_owner():
+def test_judge_movies_marks_only_collections_and_respects_owner():
     context = FakeContext(
         [
             _snapshot(1, 180, False),
@@ -66,12 +70,37 @@ def test_judge_movies_uses_duration_threshold_and_respects_owner():
 
     assert stats == {
         "scanned": 4,
-        "updated": 2,
-        "unchanged": 1,
+        "updated": 1,
+        "unchanged": 2,
         "skipped_owned": 1,
         "patch_failed": 0,
     }
     assert context.movies.patches == [
         (1, {"is_collection": True}, 0),
-        (2, {"is_collection": False}, 0),
     ]
+
+
+def test_judge_movies_marks_number_feature_below_duration_threshold():
+    context = FakeContext(
+        [
+            _snapshot(1, 240, False, movie_number="OFJE-546"),
+            _snapshot(2, 240, False, movie_number="ABP-001"),
+        ]
+    )
+
+    stats = judge_movies(
+        context,
+        DurationCollectionSettings(
+            duration_threshold_minutes=300,
+            number_features={" ofje "},
+        ),
+    )
+
+    assert stats == {
+        "scanned": 2,
+        "updated": 1,
+        "unchanged": 1,
+        "skipped_owned": 0,
+        "patch_failed": 0,
+    }
+    assert context.movies.patches == [(1, {"is_collection": True}, 0)]
