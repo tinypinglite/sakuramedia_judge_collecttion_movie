@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.common import normalize_movie_number
 from src.plugins import HOST_API_VERSION, PluginContext, PluginRegistration
 from src.scheduler.contracts import JobDefinition
 
@@ -12,8 +11,18 @@ from .settings import DurationCollectionSettings
 
 PLUGIN_ID = "sakuramedia_judge_collecttion_movie"
 DISPLAY_NAME = "按时长/番号特征判定合集影片"
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 PAGE_SIZE = 500
+
+
+def _normalize_movie_number(value: str) -> str:
+    return (
+        value.strip()
+        .upper()
+        .replace(" ", "")
+        .replace("_", "-")
+        .replace("PPV-", "")
+    )
 
 
 def judge_movies(
@@ -42,7 +51,7 @@ def judge_movies(
             stats["scanned"] += 1
             duration_minutes = snapshot.values.get("duration_minutes") or 0
             movie_number = snapshot.values.get("movie_number") or ""
-            normalized_movie_number = normalize_movie_number(movie_number)
+            normalized_movie_number = _normalize_movie_number(movie_number)
             matches_number_feature = any(
                 normalized_movie_number.startswith(feature)
                 for feature in config.number_features
