@@ -1,8 +1,9 @@
 {
   "plugin_id": "sakuramedia_judge_collecttion_movie",
   "display_name": "按时长/番号特征判定合集影片",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "host_api_version": 4,
   "requires_python": ">=3.10",
-  "author": "SakuraMedia"
+  "author": "SakuraMedia",
+  "release_api_url": "https://api.github.com/repos/tinypinglite/sakuramedia_judge_collecttion_movie/releases/latest"
 }

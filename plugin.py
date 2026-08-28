@@ -11,7 +11,7 @@ from .settings import DurationCollectionSettings
 
 PLUGIN_ID = "sakuramedia_judge_collecttion_movie"
 DISPLAY_NAME = "按时长/番号特征判定合集影片"
-VERSION = "0.2.1"
+VERSION = "0.2.2"
 PAGE_SIZE = 500
 
 
