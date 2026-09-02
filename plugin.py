@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any
 
 from src.plugins import HOST_API_VERSION, PluginContext, PluginRegistration
@@ -11,7 +13,9 @@ from .settings import DurationCollectionSettings
 
 PLUGIN_ID = "sakuramedia_judge_collecttion_movie"
 DISPLAY_NAME = "按时长/番号特征判定合集影片"
-VERSION = "0.2.2"
+VERSION = json.loads(
+    Path(__file__).with_name("manifest.json").read_text(encoding="utf-8")
+)["version"]
 PAGE_SIZE = 500
 
 
