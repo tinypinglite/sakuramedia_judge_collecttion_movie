@@ -59,6 +59,9 @@ def judge_movies(
             matches_number_feature = any(
                 normalized_movie_number.startswith(feature)
                 for feature in config.number_features
+            ) or any(
+                normalized_movie_number.endswith(feature)
+                for feature in config.suffix_number_features
             )
             if (
                 duration_minutes < config.duration_threshold_minutes

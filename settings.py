@@ -16,8 +16,9 @@ class DurationCollectionSettings(BaseModel):
     number_features: set[str] = Field(
         default_factory=lambda: {"OFJE", "CJOB", "DVAJ", "REBD"}
     )
+    suffix_number_features: set[str] = Field(default_factory=set)
 
-    @field_validator("number_features", mode="before")
+    @field_validator("number_features", "suffix_number_features", mode="before")
     @classmethod
     def _normalize_number_features(cls, value) -> set[str]:
         if value is None:

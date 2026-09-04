@@ -54,6 +54,7 @@ def test_default_threshold_is_300_minutes():
 
     assert settings.duration_threshold_minutes == 300
     assert settings.number_features == {"OFJE", "CJOB", "DVAJ", "REBD"}
+    assert settings.suffix_number_features == set()
 
 
 def test_judge_movies_marks_only_collections_and_respects_owner():
@@ -93,6 +94,32 @@ def test_judge_movies_marks_number_feature_below_duration_threshold():
         DurationCollectionSettings(
             duration_threshold_minutes=300,
             number_features={" ofje "},
+        ),
+    )
+
+    assert stats == {
+        "scanned": 2,
+        "updated": 1,
+        "unchanged": 1,
+        "skipped_owned": 0,
+        "patch_failed": 0,
+    }
+    assert context.movies.patches == [(1, {"is_collection": True}, 0)]
+
+
+def test_judge_movies_marks_suffix_number_feature_below_duration_threshold():
+    context = FakeContext(
+        [
+            _snapshot(1, 240, False, movie_number="STAR-600-V"),
+            _snapshot(2, 240, False, movie_number="STAR-600"),
+        ]
+    )
+
+    stats = judge_movies(
+        context,
+        DurationCollectionSettings(
+            duration_threshold_minutes=300,
+            suffix_number_features={" -v "},
         ),
     )
 
