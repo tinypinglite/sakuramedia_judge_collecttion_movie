@@ -12,11 +12,10 @@ class DurationCollectionSettings(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    duration_threshold_minutes: int = Field(default=300, ge=1)
+    duration_threshold_minutes: int = Field(default=300, ge=1, title="合集时长阈值（分钟）")
     number_features: set[str] = Field(
-        default_factory=lambda: {"OFJE", "CJOB", "DVAJ", "REBD"}
-    )
-    suffix_number_features: set[str] = Field(default_factory=set)
+        default_factory=lambda: {"OFJE", "CJOB", "DVAJ", "REBD"}, title="番号前缀")
+    suffix_number_features: set[str] = Field(default_factory=set, title="番号后缀")
 
     @field_validator("number_features", "suffix_number_features", mode="before")
     @classmethod
