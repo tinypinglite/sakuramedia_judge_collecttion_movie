@@ -131,3 +131,13 @@ def test_judge_movies_marks_suffix_number_feature_below_duration_threshold():
         "patch_failed": 0,
     }
     assert context.movies.patches == [(1, {"is_collection": True}, 0)]
+
+
+def test_numeric_number_suffix_preserves_separator():
+    for suffix, expected_id in (("_001", 1), ("-001", 2)):
+        context = FakeContext([
+            _snapshot(1, 60, False, movie_number="072625_001"),
+            _snapshot(2, 60, False, movie_number="072625-001"),
+        ])
+        judge_movies(context, DurationCollectionSettings(suffix_number_features={suffix}))
+        assert context.movies.patches == [(expected_id, {"is_collection": True}, 0)]

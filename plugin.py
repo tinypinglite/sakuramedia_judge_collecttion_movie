@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -20,11 +21,11 @@ PAGE_SIZE = 500
 
 
 def _normalize_movie_number(value: str) -> str:
+    value = value.strip().upper().replace(" ", "")
+    if re.fullmatch(r"\d+[-_]\d+", value):
+        return value
     return (
-        value.strip()
-        .upper()
-        .replace(" ", "")
-        .replace("_", "-")
+        value.replace("_", "-")
         .replace("PPV-", "")
     )
 
