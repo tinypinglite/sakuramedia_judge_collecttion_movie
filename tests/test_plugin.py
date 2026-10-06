@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).parents[1].parent))
 from sakuramedia_judge_collecttion_movie.plugin import judge_movies
 from sakuramedia_judge_collecttion_movie.settings import DurationCollectionSettings
 
-from src.plugins.types import MoviePage, MovieSnapshot
+from src.plugins.types import MoviePage, MovieSnapshot, TagSnapshot
 
 
 class FakeMovieApi:
@@ -36,7 +36,14 @@ class FakeContext:
         return SimpleNamespace(info=lambda *args, **kwargs: None)
 
 
-def _snapshot(movie_id, duration, is_collection, owners=None, movie_number="ABP-001"):
+def _snapshot(
+    movie_id,
+    duration,
+    is_collection,
+    owners=None,
+    movie_number="ABP-001",
+    tags=(),
+):
     return MovieSnapshot(
         movie_id=movie_id,
         revision=0,
@@ -46,6 +53,7 @@ def _snapshot(movie_id, duration, is_collection, owners=None, movie_number="ABP-
             "is_collection": is_collection,
         },
         owners=owners or {},
+        tags=tuple(TagSnapshot(tag_id=index, name=name) for index, name in enumerate(tags, 1)),
     )
 
 
@@ -55,6 +63,7 @@ def test_default_threshold_is_300_minutes():
     assert settings.duration_threshold_minutes == 300
     assert settings.number_features == {"OFJE", "CJOB", "DVAJ", "REBD"}
     assert settings.suffix_number_features == set()
+    assert settings.tag_names == set()
 
 
 def test_judge_movies_marks_only_collections_and_respects_owner():
@@ -141,3 +150,56 @@ def test_numeric_number_suffix_preserves_separator():
         ])
         judge_movies(context, DurationCollectionSettings(suffix_number_features={suffix}))
         assert context.movies.patches == [(expected_id, {"is_collection": True}, 0)]
+
+
+def test_judge_movies_marks_tag_match_below_duration_threshold():
+    context = FakeContext([
+        _snapshot(1, 60, False, tags=("4時間以上作品",)),
+        _snapshot(2, 60, False, tags=("単体作品",)),
+    ])
+
+    stats = judge_movies(
+        context,
+        DurationCollectionSettings(
+            duration_threshold_minutes=300,
+            number_features=set(),
+            tag_names={" 4時間以上作品 "},
+        ),
+    )
+
+    assert stats == {
+        "scanned": 2,
+        "updated": 1,
+        "unchanged": 1,
+        "skipped_owned": 0,
+        "patch_failed": 0,
+    }
+    assert context.movies.patches == [(1, {"is_collection": True}, 0)]
+
+
+def test_judge_movies_tag_match_is_or_and_case_insensitive():
+    context = FakeContext([
+        _snapshot(1, 60, False, tags=("VR",)),
+        _snapshot(2, 60, False, tags=("ハーレム", "巨乳")),
+        _snapshot(3, 60, False, tags=("巨乳",)),
+    ])
+
+    stats = judge_movies(
+        context,
+        DurationCollectionSettings(
+            number_features=set(),
+            tag_names={"vr", "ハーレム"},
+        ),
+    )
+
+    assert stats == {
+        "scanned": 3,
+        "updated": 2,
+        "unchanged": 1,
+        "skipped_owned": 0,
+        "patch_failed": 0,
+    }
+    assert context.movies.patches == [
+        (1, {"is_collection": True}, 0),
+        (2, {"is_collection": True}, 0),
+    ]

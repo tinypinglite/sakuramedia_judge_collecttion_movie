@@ -7,8 +7,12 @@ def _normalize_number_feature(value: str) -> str:
     return (value or "").strip().upper()
 
 
+def _normalize_tag_name(value: str) -> str:
+    return (value or "").strip().casefold()
+
+
 class DurationCollectionSettings(BaseModel):
-    """按时长或番号特征配置合集判定规则。"""
+    """按时长、番号特征或标签配置合集判定规则。"""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -16,6 +20,7 @@ class DurationCollectionSettings(BaseModel):
     number_features: set[str] = Field(
         default_factory=lambda: {"OFJE", "CJOB", "DVAJ", "REBD"}, title="番号前缀")
     suffix_number_features: set[str] = Field(default_factory=set, title="番号后缀")
+    tag_names: set[str] = Field(default_factory=set, title="标签")
 
     @field_validator("number_features", "suffix_number_features", mode="before")
     @classmethod
@@ -26,4 +31,15 @@ class DurationCollectionSettings(BaseModel):
             normalized
             for item in value
             if (normalized := _normalize_number_feature(str(item)))
+        }
+
+    @field_validator("tag_names", mode="before")
+    @classmethod
+    def _normalize_tag_names(cls, value) -> set[str]:
+        if value is None:
+            return set()
+        return {
+            normalized
+            for item in value
+            if (normalized := _normalize_tag_name(str(item)))
         }

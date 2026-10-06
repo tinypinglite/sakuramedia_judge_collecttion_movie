@@ -1,4 +1,4 @@
-"""按影片时长批量判定合集影片。"""
+"""按影片时长、番号特征或标签批量判定合集影片。"""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from src.scheduler.contracts import JobDefinition
 from .settings import DurationCollectionSettings
 
 PLUGIN_ID = "sakuramedia_judge_collecttion_movie"
-DISPLAY_NAME = "按时长/番号特征判定合集影片"
+DISPLAY_NAME = "按时长/番号特征/标签判定合集影片"
 VERSION = json.loads(
     Path(__file__).with_name("manifest.json").read_text(encoding="utf-8")
 )["version"]
@@ -35,7 +35,7 @@ def judge_movies(
     config: DurationCollectionSettings,
     reporter: Any | None = None,
 ) -> dict[str, int]:
-    """仅将时长或番号特征命中的影片标记为合集。"""
+    """仅将时长、番号特征或标签命中的影片标记为合集。"""
     logger = context.get_task_logger("judge-collection-by-duration")
     plugin_owner = f"plugin:{context.plugin_id}"
     after_id = 0
@@ -64,9 +64,13 @@ def judge_movies(
                 normalized_movie_number.endswith(feature)
                 for feature in config.suffix_number_features
             )
+            matches_tag = any(
+                tag.name.casefold() in config.tag_names for tag in snapshot.tags
+            )
             if (
                 duration_minutes < config.duration_threshold_minutes
                 and not matches_number_feature
+                and not matches_tag
             ):
                 stats["unchanged"] += 1
                 continue
@@ -127,7 +131,7 @@ def register(context: PluginContext) -> PluginRegistration:
                 task_key="sakuramedia_judge_collecttion_movie",
                 log_name="judge-collection-by-duration",
                 cli_name="judge-collection-by-duration",
-                cli_help="按影片时长或番号特征判定合集影片",
+                cli_help="按影片时长、番号特征或标签判定合集影片",
                 default_cron="0 4 * * *",
                 handler=run_judgement,
             ),

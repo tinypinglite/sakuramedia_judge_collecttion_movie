@@ -1,7 +1,8 @@
 # SakuraMedia 合集影片判定插件
 
-遍历 SakuraMedia 全部影片：时长达到 `duration_minutes` 阈值、番号以前缀特征开头，或以后缀特征结尾时，
-标记为合集。未命中的影片不作任何写入，也不会取得 `is_collection` 的字段 owner。
+遍历 SakuraMedia 全部影片：时长达到 `duration_minutes` 阈值、番号以前缀特征开头、以后缀特征结尾，
+或关联标签命中 `tag_names` 中任意一个时，标记为合集。未命中的影片不作任何写入，也不会取得
+`is_collection` 的字段 owner。
 
 
 
@@ -11,12 +12,17 @@
 {
     "duration_threshold_minutes": 300,
     "number_features": ["OFJE", "CJOB", "DVAJ", "REBD"],
-    "suffix_number_features": []
+    "suffix_number_features": [],
+    "tag_names": []
 }
 ```
 
 `number_features` 为前缀列表，`suffix_number_features` 为后缀列表；两者都会忽略首尾空格和大小写。例如配置
 `"suffix_number_features": ["-V"]` 时，`STAR-600-V` 会被判定为合集。
+
+`tag_names` 为标签名列表（表单中每行一个），多个标签之间为「或」关系：影片关联的任一标签名与列表中的
+某项精确匹配（忽略首尾空格和大小写）即判为合集。例如配置 `"tag_names": ["VR", "4時間以上作品"]` 时，
+带有 `VR` 或 `4時間以上作品` 标签的影片都会被判定为合集。
 
 插件任务名为 `sakuramedia_judge_collecttion_movie`，默认每天凌晨 4 点执行，也可以通过
 宿主的任务中心手动触发。
