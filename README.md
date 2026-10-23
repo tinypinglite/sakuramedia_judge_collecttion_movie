@@ -28,3 +28,9 @@
 宿主的任务中心手动触发。
 
 在 APP 内手动标记的合集和单体不会被此插件覆盖。
+
+## License
+
+本项目采用 [PolyForm Noncommercial License 1.0.0](./LICENSE)，仅允许非商业用途。
+
+Copyright (C) 2026 tinypinglite
