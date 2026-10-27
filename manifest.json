@@ -1,8 +1,12 @@
 {
   "plugin_id": "sakuramedia_judge_collecttion_movie",
   "display_name": "按时长/番号特征/标签判定合集影片",
-  "version": "0.2.5",
-  "host_api_version": 5,
+  "display_name_i18n": {
+    "zh-CN": "按时长/番号特征/标签判定合集影片",
+    "en": "Detect collection movies by duration, number pattern or tag"
+  },
+  "version": "0.2.6",
+  "host_api_version": 12,
   "settings_model": "DurationCollectionSettings",
   "requires_python": ">=3.10",
   "author": "SakuraMedia",
