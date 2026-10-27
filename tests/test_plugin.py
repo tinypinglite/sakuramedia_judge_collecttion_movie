@@ -1,13 +1,19 @@
+import json
 import sys
 from pathlib import Path
+from string import Formatter
 from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).parents[1].parent))
 
-from sakuramedia_judge_collecttion_movie.plugin import judge_movies
+from sakuramedia_judge_collecttion_movie.plugin import judge_movies, register
 from sakuramedia_judge_collecttion_movie.settings import DurationCollectionSettings
 
+from src.i18n import LanguageState, reset_language_state, set_language_state
+from src.plugins.i18n import PluginI18n
 from src.plugins.types import MoviePage, MovieSnapshot, TagSnapshot
+
+PLUGIN_DIR = Path(__file__).resolve().parents[1]
 
 
 class FakeMovieApi:
@@ -27,13 +33,26 @@ class FakeMovieApi:
 
 class FakeContext:
     plugin_id = "sakuramedia_judge_collecttion_movie"
+    settings = {}
 
     def __init__(self, snapshots):
         self.movies = FakeMovieApi(snapshots)
 
+    @property
+    def i18n(self):
+        return PluginI18n(self.plugin_id, PLUGIN_DIR)
+
     @staticmethod
     def get_task_logger(_name):
         return SimpleNamespace(info=lambda *args, **kwargs: None)
+
+
+class FakeReporter:
+    def __init__(self):
+        self.progress = []
+
+    def progress_callback(self, payload):
+        self.progress.append(dict(payload))
 
 
 def _snapshot(
@@ -203,3 +222,92 @@ def test_judge_movies_tag_match_is_or_and_case_insensitive():
         (1, {"is_collection": True}, 0),
         (2, {"is_collection": True}, 0),
     ]
+
+
+def _read_catalog(locale):
+    path = PLUGIN_DIR / "i18n" / f"{locale}.json"
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _placeholders(template):
+    return {name for _, name, _, _ in Formatter().parse(template) if name}
+
+
+def test_catalogs_share_keys_and_placeholders():
+    zh = _read_catalog("zh-CN")
+    en = _read_catalog("en")
+
+    assert zh.keys() == en.keys()
+    for key, chinese in zh.items():
+        assert chinese
+        assert en[key]
+        assert _placeholders(chinese) == _placeholders(en[key])
+
+
+def test_manifest_declares_i18n_display_name():
+    manifest = json.loads(
+        (PLUGIN_DIR / "manifest.json").read_text(encoding="utf-8")
+    )
+
+    assert manifest["host_api_version"] == 12
+    assert manifest["display_name_i18n"] == {
+        "zh-CN": manifest["display_name"],
+        "en": "Detect collection movies by duration, number pattern or tag",
+    }
+
+
+def test_registration_localizes_display_name_and_cli_help():
+    registration = register(FakeContext([]))
+    display_name_i18n = registration.display_name_i18n
+    job = registration.jobs[0]
+
+    assert display_name_i18n["zh-CN"] == registration.display_name
+    assert display_name_i18n["en"] != display_name_i18n["zh-CN"]
+    assert display_name_i18n["en"] == (
+        "Detect collection movies by duration, number pattern or tag"
+    )
+    assert job.cli_help_i18n["zh-CN"] == job.cli_help
+    assert job.cli_help_i18n["en"] == (
+        "Detect collection movies by duration, number pattern or tag"
+    )
+
+
+def test_settings_schema_exposes_i18n_titles():
+    properties = DurationCollectionSettings.model_json_schema()["properties"]
+    expected = {
+        "duration_threshold_minutes": (
+            "合集时长阈值（分钟）",
+            "Collection duration threshold (minutes)",
+        ),
+        "number_features": ("番号前缀", "Movie number prefixes"),
+        "suffix_number_features": ("番号后缀", "Movie number suffixes"),
+        "tag_names": ("标签", "Tags"),
+    }
+
+    for field, (chinese, english) in expected.items():
+        assert properties[field]["title"] == chinese
+        assert properties[field]["title_i18n"] == {
+            "zh-CN": chinese,
+            "en": english,
+        }
+
+
+def _progress_text(language):
+    context = FakeContext([_snapshot(1, 400, False), _snapshot(2, 60, True)])
+    reporter = FakeReporter()
+    token = set_language_state(LanguageState(user_language=language))
+    try:
+        judge_movies(context, DurationCollectionSettings(), reporter)
+    finally:
+        reset_language_state(token)
+    return reporter.progress[-1]["text"]
+
+
+def test_progress_text_follows_request_language():
+    chinese = _progress_text("zh-CN")
+    english = _progress_text("en")
+
+    assert chinese == "扫描 2 部，已更新 1 部，跳过 owner 0 部"
+    assert english == "Scanned 2 movies, updated 1, skipped 0 owned by others"
+    assert chinese != english
+

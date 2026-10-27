@@ -1,0 +1,9 @@
+{
+  "manifest.display_name": "Detect collection movies by duration, number pattern or tag",
+  "jobs.judge.cli_help": "Detect collection movies by duration, number pattern or tag",
+  "jobs.judge.progress": "Scanned {scanned} movies, updated {updated}, skipped {skipped} owned by others",
+  "settings.duration_threshold_minutes.title": "Collection duration threshold (minutes)",
+  "settings.number_features.title": "Movie number prefixes",
+  "settings.suffix_number_features.title": "Movie number suffixes",
+  "settings.tag_names.title": "Tags"
+}

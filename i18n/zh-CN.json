@@ -1,0 +1,9 @@
+{
+  "manifest.display_name": "按时长/番号特征/标签判定合集影片",
+  "jobs.judge.cli_help": "按影片时长、番号特征或标签判定合集影片",
+  "jobs.judge.progress": "扫描 {scanned} 部，已更新 {updated} 部，跳过 owner {skipped} 部",
+  "settings.duration_threshold_minutes.title": "合集时长阈值（分钟）",
+  "settings.number_features.title": "番号前缀",
+  "settings.suffix_number_features.title": "番号后缀",
+  "settings.tag_names.title": "标签"
+}

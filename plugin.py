@@ -11,9 +11,11 @@ from src.plugins import HOST_API_VERSION, PluginContext, PluginRegistration
 from src.scheduler.contracts import JobDefinition
 
 from .settings import DurationCollectionSettings
+from .translations import text, text_map
 
 PLUGIN_ID = "sakuramedia_judge_collecttion_movie"
 DISPLAY_NAME = "按时长/番号特征/标签判定合集影片"
+DISPLAY_NAME_I18N = text_map("manifest.display_name")
 VERSION = json.loads(
     Path(__file__).with_name("manifest.json").read_text(encoding="utf-8")
 )["version"]
@@ -92,12 +94,22 @@ def judge_movies(
             stats["updated" if patched else "patch_failed"] += 1
 
         if reporter is not None:
+            scanned = stats["scanned"]
+            updated = stats["updated"]
+            skipped = stats["skipped_owned"]
             reporter.progress_callback(
                 {
-                    "current": stats["scanned"],
-                    "text": (
-                        f"扫描 {stats['scanned']} 部，已更新 {stats['updated']} 部，"
-                        f"跳过 owner {stats['skipped_owned']} 部"
+                    "current": scanned,
+                    "text": context.i18n.t(
+                        "jobs.judge.progress",
+                        default=text("jobs.judge.progress").format(
+                            scanned=scanned,
+                            updated=updated,
+                            skipped=skipped,
+                        ),
+                        scanned=scanned,
+                        updated=updated,
+                        skipped=skipped,
                     ),
                 }
             )
@@ -124,6 +136,7 @@ def register(context: PluginContext) -> PluginRegistration:
     return PluginRegistration(
         plugin_id=PLUGIN_ID,
         display_name=DISPLAY_NAME,
+        display_name_i18n=DISPLAY_NAME_I18N,
         version=VERSION,
         host_api_version=HOST_API_VERSION,
         jobs=(
@@ -132,6 +145,7 @@ def register(context: PluginContext) -> PluginRegistration:
                 log_name="judge-collection-by-duration",
                 cli_name="judge-collection-by-duration",
                 cli_help="按影片时长、番号特征或标签判定合集影片",
+                cli_help_i18n=text_map("jobs.judge.cli_help"),
                 default_cron="0 4 * * *",
                 handler=run_judgement,
             ),

@@ -29,6 +29,23 @@
 
 在 APP 内手动标记的合集和单体不会被此插件覆盖。
 
+## 多语言 / i18n
+
+本插件声明 Host API 12，支持 `zh-CN` / `en`：
+
+- 语言包放在 `i18n/zh-CN.json`、`i18n/en.json`，两个文件 key 集合必须一致；
+  `translations.py` 只在导入时读取它们，生成静态 `*_i18n` 字典。
+- 插件名：`manifest.json` 的 `display_name_i18n` +
+  `PluginRegistration.display_name_i18n`。
+- 任务说明：`JobDefinition.cli_help_i18n`。
+- 设置项标题：Pydantic `Field` 的
+  `json_schema_extra={"title_i18n": text_map("settings.<字段名>.title")}`。
+- 运行时文本（任务进度）：
+  `context.i18n.t("jobs.judge.progress", default=..., **params)`。
+- 所有 `*_i18n` 字段都是可选的，缺失时宿主回退到插件原文；新增语言时在
+  `i18n/` 增加同名 JSON，并补上 manifest / registration 的
+  `display_name_i18n`。
+
 ## License
 
 本项目采用 [PolyForm Noncommercial License 1.0.0](./LICENSE)，仅允许非商业用途。
