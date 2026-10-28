@@ -5,7 +5,12 @@
     "zh-CN": "按时长/番号特征/标签判定合集影片",
     "en": "Detect collection movies by duration, number pattern or tag"
   },
-  "version": "0.2.6",
+  "description": "按影片时长和番号前缀自动标记合集影片，不覆盖 App 内的手动判定。",
+  "description_i18n": {
+    "zh-CN": "按影片时长和番号前缀自动标记合集影片，不覆盖 App 内的手动判定。",
+    "en": "Automatically marks collection movies by duration and number prefix, without overriding manual decisions made in the app."
+  },
+  "version": "0.2.7",
   "host_api_version": 12,
   "settings_model": "DurationCollectionSettings",
   "requires_python": ">=3.10",
