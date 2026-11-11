@@ -10,8 +10,8 @@
     "zh-CN": "按影片时长和番号前缀自动标记合集影片，不覆盖 App 内的手动判定。",
     "en": "Automatically marks collection movies by duration and number prefix, without overriding manual decisions made in the app."
   },
-  "version": "0.2.7",
-  "host_api_version": 12,
+  "version": "0.2.8",
+  "host_api_version": 18,
   "settings_model": "DurationCollectionSettings",
   "requires_python": ">=3.10",
   "author": "SakuraMedia",

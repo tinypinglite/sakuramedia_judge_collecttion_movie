@@ -249,7 +249,7 @@ def test_manifest_declares_i18n_display_name():
         (PLUGIN_DIR / "manifest.json").read_text(encoding="utf-8")
     )
 
-    assert manifest["host_api_version"] == 12
+    assert manifest["host_api_version"] == 18
     assert manifest["display_name_i18n"] == {
         "zh-CN": manifest["display_name"],
         "en": "Detect collection movies by duration, number pattern or tag",
